@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="hive_dark">#121212</color>
+    <color name="hive_surface">#1E1E1E</color>
+    <color name="hive_accent">#00E5FF</color> <color name="hive_text_secondary">#B0B0B0</color>
+    <color name="transparent_overlay">#80000000</color>
+</resources>
