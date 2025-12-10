@@ -10,11 +10,10 @@
         android:id="@+id/tvAlertHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="INCOMING THREATS"
+        android:text="ACTIVE THREAT FEED"
         android:textColor="#FF5252"
-        android:textSize="20sp"
+        android:textSize="22sp"
         android:textStyle="bold"
-        android:letterSpacing="0.1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -22,79 +21,18 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="20dp"
+        android:background="@drawable/bg_input_glass"
+        android:padding="15dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvAlertHeader">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/tvAlertLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_input_glass"
-                android:orientation="vertical"
-                android:padding="15dp"
-                android:layout_marginBottom="15dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="[CRITICAL] SOS RECEIVED"
-                    android:textColor="#FF5252"
-                    android:textStyle="bold"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Source: Agent Hive-04\nLoc: Sector 9\nMsg: Flooding imminent. Requesting evac."
-                    android:textColor="#B0B0B0"
-                    android:layout_marginTop="5dp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_input_glass"
-                android:orientation="vertical"
-                android:padding="15dp"
-                android:layout_marginBottom="15dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="[WARNING] WEATHER UPDATE"
-                    android:textColor="#FFAB00"
-                    android:textStyle="bold"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Heavy rainfall predicted in Grid A. Move to high ground."
-                    android:textColor="#B0B0B0"
-                    android:layout_marginTop="5dp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_input_glass"
-                android:orientation="vertical"
-                android:padding="15dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="[INFO] SUPPLY DROP"
-                    android:textColor="@color/hive_accent"
-                    android:textStyle="bold"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Medical supplies delivered to base camp."
-                    android:textColor="#B0B0B0"
-                    android:layout_marginTop="5dp"/>
-            </LinearLayout>
-
-        </LinearLayout>
+            android:text=""
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:lineSpacingExtra="6dp"/>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
