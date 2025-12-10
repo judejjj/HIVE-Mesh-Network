@@ -67,9 +67,10 @@ public class MainActivity extends AppCompatActivity {
 
         // USER 2 CREDENTIALS (Add as many as you want here)
         boolean isUser2 = user.equals("hive2") && pass.equals("hive2");
+        boolean isUser3 = user.equals("hive3") && pass.equals("hive3");
 
         // CHECK: Is it User 1 OR (||) User 2?
-        if (isUser1 || isUser2) {
+        if (isUser1 || isUser2 || isUser3) {
             // SUCCESS
             performSystemCheck(user, pass);
         } else {
