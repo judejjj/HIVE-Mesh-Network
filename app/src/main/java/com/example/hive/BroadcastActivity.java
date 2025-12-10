@@ -1,9 +1,11 @@
-package com.example.hive; // <--- CHECK YOUR PACKAGE NAME
+package com.example.hive; // <--- MAKE SURE THIS MATCHES YOUR PACKAGE
 
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
@@ -45,12 +47,13 @@ public class BroadcastActivity extends AppCompatActivity {
     private final String SERVICE_ID = "com.example.hive.OFFLINE_LINK";
     private final String USER_NICKNAME = "Agent " + Build.MODEL;
 
-    // P2P_CLUSTER allows devices to be both senders and receivers (Mesh-like)
+    // P2P_CLUSTER is the correct strategy for M-to-N (Mesh) networking
     private final Strategy STRATEGY = Strategy.P2P_CLUSTER;
 
+    // List of all currently connected devices
     private final List<String> connectedEndpoints = new ArrayList<>();
 
-    // Flag to prevent stopping discovery multiple times
+    // Status flag to prevent overlapping operations
     private boolean isConnecting = false;
 
     @Override
@@ -65,7 +68,6 @@ public class BroadcastActivity extends AppCompatActivity {
 
         connectionsClient = Nearby.getConnectionsClient(this);
 
-        // CHECK PERMISSIONS
         if (!hasPermissions()) {
             appendLog("Requesting Permissions...");
             requestPermissions();
@@ -76,14 +78,14 @@ public class BroadcastActivity extends AppCompatActivity {
         btnSend.setOnClickListener(v -> sendMessage());
     }
 
-    // --- 1. NETWORK STARTUP ---
+    // --- 1. NETWORK INITIALIZATION ---
     private void startOfflineNetwork() {
         if (!hasPermissions()) {
-            appendLog("ERROR: Missing Permissions. Cannot Start.");
+            appendLog("CRITICAL: Missing Permissions.");
             return;
         }
 
-        tvLog.setText("> INITIALIZING OFFLINE PROTOCOLS...\n");
+        tvLog.setText("> HIVE MESH PROTOCOLS ACTIVE...\n");
         startAdvertising();
         startDiscovery();
     }
@@ -94,8 +96,8 @@ public class BroadcastActivity extends AppCompatActivity {
 
         connectionsClient.startAdvertising(
                         USER_NICKNAME, SERVICE_ID, connectionLifecycleCallback, advertisingOptions)
-                .addOnSuccessListener(aVoid -> appendLog("Broadcasting Signal (Advertising)..."))
-                .addOnFailureListener(e -> appendLog("Advertising Failed: " + e.getMessage()));
+                .addOnSuccessListener(aVoid -> appendLog("Broadcasting Identity..."))
+                .addOnFailureListener(e -> appendLog("Broadcast Fail: " + e.getMessage()));
     }
 
     private void startDiscovery() {
@@ -104,71 +106,63 @@ public class BroadcastActivity extends AppCompatActivity {
 
         connectionsClient.startDiscovery(
                         SERVICE_ID, endpointDiscoveryCallback, discoveryOptions)
-                .addOnSuccessListener(aVoid -> appendLog("Scanning for Agents (Discovery)..."))
-                .addOnFailureListener(e -> appendLog("Scanner Failed: " + e.getMessage()));
+                .addOnSuccessListener(aVoid -> appendLog("Scanning for Nodes..."))
+                .addOnFailureListener(e -> appendLog("Scan Fail: " + e.getMessage()));
     }
 
-    // --- 2. CONNECTION HANDLERS ---
-
-    // FOUND A DEVICE
+    // --- 2. FINDING DEVICES (Discovery) ---
     private final EndpointDiscoveryCallback endpointDiscoveryCallback =
             new EndpointDiscoveryCallback() {
                 @Override
                 public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
                     if (isConnecting || connectedEndpoints.contains(endpointId)) {
-                        return; // Already busy connecting or connected
+                        return;
                     }
 
-                    appendLog("Device Found: " + info.getEndpointName());
+                    appendLog("Node Detected: " + info.getEndpointName());
 
-                    // CRITICAL FIX FOR 8012 ERROR:
-                    // We MUST stop discovery before requesting a connection.
-                    // The radio cannot scan and connect at the same time.
+                    // STOP SCANNING to prevent Error 8012 (Radio Busy)
                     connectionsClient.stopDiscovery();
                     isConnecting = true;
 
-                    appendLog("Requesting Link...");
+                    appendLog("Initiating Handshake...");
                     connectionsClient.requestConnection(USER_NICKNAME, endpointId, connectionLifecycleCallback)
                             .addOnFailureListener(e -> {
-                                appendLog("Request Failed: " + e.getMessage());
+                                appendLog("Handshake Failed: " + e.getMessage());
                                 isConnecting = false;
-                                // Restart discovery if connection failed so we can find others
-                                startDiscovery();
+                                startDiscovery(); // Resume scanning
                             });
                 }
 
                 @Override
                 public void onEndpointLost(@NonNull String endpointId) {
-                    appendLog("Device Lost: " + endpointId);
+                    appendLog("Signal Lost: " + endpointId);
                 }
             };
 
-    // CONNECTION STATUS CHANGES
+    // --- 3. MANAGING CONNECTIONS ---
     private final ConnectionLifecycleCallback connectionLifecycleCallback =
             new ConnectionLifecycleCallback() {
                 @Override
                 public void onConnectionInitiated(@NonNull String endpointId, @NonNull ConnectionInfo info) {
                     appendLog("Incoming Link: " + info.getEndpointName());
-                    // Auto-Accept connection
+                    // Automatically accept the connection
                     connectionsClient.acceptConnection(endpointId, payloadCallback);
                 }
 
                 @Override
                 public void onConnectionResult(@NonNull String endpointId, @NonNull ConnectionResolution result) {
-                    isConnecting = false; // We are done connecting (success or fail)
+                    isConnecting = false;
 
                     if (result.getStatus().isSuccess()) {
-                        appendLog(">>> SECURE LINK ESTABLISHED <<<");
+                        appendLog(">>> SECURE MESH LINK: " + endpointId + " <<<");
                         connectedEndpoints.add(endpointId);
 
-                        // Restart discovery to find MORE people (Mesh building)
-                        // Wait a tiny bit to let the connection stabilize
-                        new android.os.Handler().postDelayed(() -> startDiscovery(), 2000);
-
+                        // Wait 2 seconds, then start scanning again to find MORE people (Mesh building)
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> startDiscovery(), 2000);
                     } else {
                         appendLog("Link Failed: " + result.getStatus().getStatusCode());
-                        // If failed, start scanning again
-                        startDiscovery();
+                        startDiscovery(); // Try again
                     }
                 }
 
@@ -179,33 +173,43 @@ public class BroadcastActivity extends AppCompatActivity {
                 }
             };
 
-    // --- 3. SEND/RECEIVE ---
+    // --- 4. MESSAGING & REPEATER LOGIC ---
 
+    // Send a new message from ME
     private void sendMessage() {
         String msg = etMessage.getText().toString().trim();
         if (TextUtils.isEmpty(msg)) return;
 
         if (!connectedEndpoints.isEmpty()) {
-            Payload payload = Payload.fromBytes(msg.getBytes(StandardCharsets.UTF_8));
+            // Format: [SENDER_NAME]: Message
+            String fullMessage = USER_NICKNAME + ": " + msg;
+            Payload payload = Payload.fromBytes(fullMessage.getBytes(StandardCharsets.UTF_8));
+
+            // Send to everyone I am directly connected to
             connectionsClient.sendPayload(connectedEndpoints, payload);
 
             String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
             appendLog("\n[" + time + "] YOU: " + msg);
             etMessage.setText("");
         } else {
-            Toast.makeText(this, "NO DEVICES CONNECTED", Toast.LENGTH_SHORT).show();
-            appendLog("Error: No live connections.");
+            Toast.makeText(this, "NO NODES IN RANGE", Toast.LENGTH_SHORT).show();
         }
     }
 
+    // Receive a message from SOMEONE ELSE
     private final PayloadCallback payloadCallback =
             new PayloadCallback() {
                 @Override
                 public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
                     if (payload.getType() == Payload.Type.BYTES) {
-                        String receivedMsg = new String(payload.asBytes(), StandardCharsets.UTF_8);
+                        String receivedData = new String(payload.asBytes(), StandardCharsets.UTF_8);
+
+                        // Display it
                         String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
-                        appendLog("\n[" + time + "] INCOMING: " + receivedMsg);
+                        appendLog("\n[" + time + "] " + receivedData);
+
+                        // REPEATER: Pass it on!
+                        forwardMessageToMesh(receivedData, endpointId);
                     }
                 }
 
@@ -213,15 +217,28 @@ public class BroadcastActivity extends AppCompatActivity {
                 public void onPayloadTransferUpdate(@NonNull String endpointId, @NonNull PayloadTransferUpdate update) { }
             };
 
+    // THE REPEATER FUNCTION
+    private void forwardMessageToMesh(String originalMsg, String senderId) {
+        // If I'm the only one here, nowhere to send.
+        if (connectedEndpoints.size() <= 1) return;
+
+        Payload payload = Payload.fromBytes(originalMsg.getBytes(StandardCharsets.UTF_8));
+
+        // Loop through everyone I know
+        for (String targetEndpoint : connectedEndpoints) {
+            // Don't send it back to the person who just sent it to me
+            if (!targetEndpoint.equals(senderId)) {
+                connectionsClient.sendPayload(targetEndpoint, payload);
+            }
+        }
+    }
+
+    // --- 5. UTILITIES & PERMISSIONS ---
     private void appendLog(String text) {
-        // Run on UI Thread to prevent crashes
         runOnUiThread(() -> tvLog.append("\n" + text));
     }
 
-    // --- 4. ROBUST PERMISSIONS ---
-
     private static final String[] REQUIRED_PERMISSIONS;
-
     static {
         if (Build.VERSION.SDK_INT >= 31) {
             REQUIRED_PERMISSIONS = new String[]{
@@ -230,7 +247,7 @@ public class BroadcastActivity extends AppCompatActivity {
                     Manifest.permission.BLUETOOTH_SCAN,
                     Manifest.permission.BLUETOOTH_ADVERTISE,
                     Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.NEARBY_WIFI_DEVICES // Crucial for Android 13+
+                    Manifest.permission.NEARBY_WIFI_DEVICES
             };
         } else {
             REQUIRED_PERMISSIONS = new String[]{
@@ -257,17 +274,14 @@ public class BroadcastActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 100);
     }
 
-    // What happens AFTER user clicks "Allow"
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 100) {
             if (hasPermissions()) {
-                appendLog("Permissions Granted. Starting Network...");
                 startOfflineNetwork();
             } else {
-                Toast.makeText(this, "Permissions Denied. Offline Mode Failed.", Toast.LENGTH_LONG).show();
-                appendLog("ERROR: User Denied Permissions.");
+                Toast.makeText(this, "Permissions Denied", Toast.LENGTH_SHORT).show();
             }
         }
     }
