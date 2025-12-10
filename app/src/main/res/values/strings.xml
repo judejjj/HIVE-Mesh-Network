@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">HIVE</string>
+    <string name="dashboard_title">COMMAND CORE</string>
+    <string name="dashboard_status">SYSTEM STATUS: NOMINAL</string>
+    <string name="dashboard_live_map">LIVE MAP</string>
+    <string name="dashboard_reports">REPORTS</string>
+    <string name="dashboard_alerts">ALERTS</string>
+    <string name="dashboard_config">CONFIG</string>
+    <string name="dashboard_broadcast_sos">BROADCAST SOS SIGNAL</string>
+    <string name="content_description_live_map">Live map icon</string>
+    <string name="content_description_reports">Reports icon</string>
+    <string name="content_description_alerts">Alerts icon</string>
+    <string name="content_description_config">Config icon</string>
 </resources>

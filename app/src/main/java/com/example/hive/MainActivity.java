@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         String user = etUsername.getText().toString().trim();
         String pass = etPassword.getText().toString().trim();
 
-        // 1. Basic Validation (Is it empty?)
+        // 1. Basic Validation
         if (user.isEmpty()) {
             etUsername.setError("Identity Required");
             etUsername.requestFocus();
@@ -60,19 +60,20 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // 2. THE HARDCODED "DB" CHECK
-        // In a real app, this happens on a server.
-        // For your prototype, we act as the server here.
+        // 2. THE HARDCODED "DB" CHECK (Updated for 2 Users)
 
-        // Define your accepted credentials
-        String validUser = "hive1";
-        String validPass = "hive1"; // <--- THIS IS YOUR PASSWORD
+        // USER 1 CREDENTIALS
+        boolean isUser1 = user.equals("hive1") && pass.equals("hive1");
 
-        if (user.equals(validUser) && pass.equals(validPass)) {
-            // SUCCESS: Credentials match!
+        // USER 2 CREDENTIALS (Add as many as you want here)
+        boolean isUser2 = user.equals("hive2") && pass.equals("hive2");
+
+        // CHECK: Is it User 1 OR (||) User 2?
+        if (isUser1 || isUser2) {
+            // SUCCESS
             performSystemCheck(user, pass);
         } else {
-            // FAILURE: Wrong password
+            // FAILURE
             etPassword.setError("ACCESS DENIED: Invalid Credentials");
             Toast.makeText(this, "SECURITY ALERT: Unauthorized Access Attempt", Toast.LENGTH_LONG).show();
         }

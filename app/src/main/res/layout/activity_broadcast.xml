@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/hive_dark"
+    android:padding="20dp"
+    tools:context=".BroadcastActivity">
+
+    <TextView
+        android:id="@+id/tvHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FIELD BROADCAST"
+        android:textColor="@color/hive_accent"
+        android:textSize="20sp"
+        android:letterSpacing="0.1"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CHANNEL: ALL_UNITS (UNENCRYPTED)"
+        android:textColor="#80FFFFFF"
+        android:textSize="10sp"
+        app:layout_constraintTop_toBottomOf="@id/tvHeader"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/etMessage"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/bg_input_glass"
+        android:gravity="top|start"
+        android:hint="Type intel here... (e.g., Food supplies at Grid 4)"
+        android:textColorHint="#60FFFFFF"
+        android:textColor="@color/white"
+        android:padding="20dp"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/tvHeader" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnSendBroadcast"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/btn_glow"
+        android:text="TRANSMIT TO HUB"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/etMessage" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RECENT TRANSMISSIONS:"
+        android:textColor="@color/hive_text_secondary"
+        android:layout_marginTop="40dp"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/btnSendBroadcast"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvLog"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:text="> System initialized... Waiting for input."
+        android:textColor="#00E5FF"
+        android:fontFamily="monospace"
+        android:textSize="12sp"
+        android:lineSpacingExtra="4dp"
+        app:layout_constraintTop_toBottomOf="@id/btnSendBroadcast"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="20dp"
+        app:layout_constraintVertical_bias="0.0"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "35584269344",
+    "project_id": "hive-system-a402c",
+    "storage_bucket": "hive-system-a402c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:35584269344:android:d87d7cccc18e50ede77045",
+        "android_client_info": {
+          "package_name": "com.example.hive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnZSkOA2OZBK-hfbaADeDK5XD4ELL27_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
