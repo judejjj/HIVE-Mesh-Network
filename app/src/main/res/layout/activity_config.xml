@@ -1,73 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/hive_dark"
-    android:padding="30dp">
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#000000"
+    android:gravity="center">
 
     <TextView
-        android:id="@+id/tvConfigTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SYSTEM CORE"
-        android:textColor="@color/white"
-        android:textSize="22sp"
+        android:text="IDENTITY CONFIG"
+        android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:textColor="#00E5FF"
+        android:layout_marginBottom="30dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
     <TextView
+        android:id="@+id/tvUuid"
+        android:text="ID: ..."
+        android:textColor="#888888"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="20dp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="CONFIGURATION AND MAINTENANCE"
-        android:textColor="#80FFFFFF"
-        android:textSize="12sp"
-        app:layout_constraintTop_toBottomOf="@id/tvConfigTitle"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_height="wrap_content"/>
 
-    <androidx.appcompat.widget.AppCompatButton
+    <EditText
+        android:id="@+id/etNickname"
+        android:hint="Enter Nickname"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#555555"
+        android:backgroundTint="#00E5FF"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnSaveParams"
+        android:text="SAVE IDENTITY"
+        android:backgroundTint="#00E5FF"
+        android:textColor="#000000"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="40dp"/>
+
+    <Button
         android:id="@+id/btnResetNetwork"
+        android:text="RESET NETWORK"
+        android:backgroundTint="#FF9800"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginTop="60dp"
-        android:text="RESET NETWORK LINK"
-        android:background="@drawable/bg_input_glass"
-        android:textColor="@color/hive_accent"
-        android:textStyle="bold"
-        android:letterSpacing="0.1"
-        app:layout_constraintTop_toBottomOf="@id/tvConfigTitle" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Use this if connection drops or new devices are not appearing."
-        android:textColor="#60FFFFFF"
-        android:textSize="12sp"
-        android:gravity="center"
-        android:layout_marginTop="10dp"
-        app:layout_constraintTop_toBottomOf="@id/btnResetNetwork" />
+        android:layout_height="wrap_content"/>
 
     <Button
         android:id="@+id/btnWipe"
+        android:text="EMERGENCY WIPE"
+        android:backgroundTint="#F44336"
+        android:layout_marginTop="10dp"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginBottom="30dp"
-        android:text="EMERGENCY WIPE (DATA + LOGOUT)"
-        android:backgroundTint="#D50000"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:layout_height="wrap_content"/>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="WARNING: IRREVERSIBLE ACTION"
-        android:textColor="#D50000"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="10dp"
-        app:layout_constraintBottom_toTopOf="@id/btnWipe" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

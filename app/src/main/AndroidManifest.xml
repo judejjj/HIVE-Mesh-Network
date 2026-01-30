@@ -2,11 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
@@ -28,7 +27,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE" />
+            android:value="YOUR_KEY_HERE" />
 
         <activity
             android:name=".MainActivity"
@@ -40,12 +39,14 @@
         </activity>
 
         <activity android:name=".DashboardActivity" />
+
         <activity android:name=".BroadcastActivity" />
+
         <activity android:name=".AlertsActivity" />
         <activity android:name=".ConfigActivity" />
-
         <activity android:name=".SosActivity" />
+        <activity android:name=".PeerListActivity" />
+        <activity android:name=".PrivateChatActivity" />
 
     </application>
-
 </manifest>

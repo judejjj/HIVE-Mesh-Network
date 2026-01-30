@@ -23,6 +23,18 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="20dp"/>
 
+    <ImageButton
+        android:id="@+id/btnHeaderSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_preferences"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:tint="@color/hive_accent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="20dp"
+        android:contentDescription="Settings" />
+
     <TextView
         android:id="@+id/tvDashStatus"
         android:layout_width="wrap_content"
@@ -132,12 +144,12 @@
             <ImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_preferences"
+                android:src="@android:drawable/ic_menu_myplaces"
                 app:tint="@color/white"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="SETTINGS"
+                android:text="DIRECT UPLINK"
                 android:textColor="@color/hive_text_secondary"
                 android:layout_marginTop="10dp"
                 android:textSize="12sp"
