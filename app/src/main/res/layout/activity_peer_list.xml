@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -64,30 +64,21 @@
 
         <TextView
             android:id="@+id/tvChatStatus"
-            android:text="CONNECTED TO: Mike#C9X1"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CONNECTED: Host"
             android:textColor="#00FF00"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:padding="8dp"/>
 
-        <ScrollView
-            android:id="@+id/scrollChat"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvChat"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="10dp"
             android:background="#111111"
-            android:padding="5dp">
-            
-            <TextView
-                android:id="@+id/tvChatLog"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:text="Secure Channel Initialized...\n"/>
-        </ScrollView>
+            android:padding="8dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -101,27 +92,30 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="Type payload..."
-                android:textColor="#FFFFFF"
                 android:textColorHint="#555555"
                 android:background="#222222"
                 android:padding="10dp"/>
 
-            <Button
+            <ImageButton
+                    android:id="@+id/btnMic"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="4dp"
+                    android:layout_marginRight="4dp"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="#00E5FF"/>
+
+            <ImageButton
                 android:id="@+id/btnSend"
-                android:text="SEND"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_marginLeft="5dp"
                 android:backgroundTint="#00E5FF"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:src="@android:drawable/ic_menu_send"
+                android:contentDescription="Send"
+                android:padding="8dp"/>
         </LinearLayout>
-
-        <Button
-            android:id="@+id/btnBack"
-            android:text="DISCONNECT"
-            android:layout_marginTop="10dp"
-            android:backgroundTint="#FF4444"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
     </LinearLayout>
 
 </LinearLayout>

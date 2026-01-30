@@ -20,6 +20,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.connection.*;
 
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.view.MotionEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,6 +41,10 @@ public class PrivateChatActivity extends AppCompatActivity {
     private RecyclerView rvChat;
     private EditText etMessage;
     private ImageButton btnSend;
+    private ImageButton btnMic; // PTT
+
+    private MediaRecorder recorder;
+    private String audioFileName;
 
     private ChatAdapter adapter;
     private final List<String> messages = new ArrayList<>();
@@ -55,6 +65,10 @@ public class PrivateChatActivity extends AppCompatActivity {
         rvChat = findViewById(R.id.rvPrivateChat);
         etMessage = findViewById(R.id.etPrivateMessage);
         btnSend = findViewById(R.id.btnSendPrivate);
+        btnMic = findViewById(R.id.btnMic); // PTT
+
+        // Setup Audio File
+        audioFileName = getExternalCacheDir().getAbsolutePath() + "/voice_note.3gp";
 
         // GET TARGET FROM INTENT
         targetName = getIntent().getStringExtra("TARGET_NAME");
@@ -73,6 +87,19 @@ public class PrivateChatActivity extends AppCompatActivity {
         connectionsClient = Nearby.getConnectionsClient(this);
 
         btnSend.setOnClickListener(v -> sendMessage());
+
+        // PTT LISTENER
+        btnMic.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    startRecording();
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    stopRecording();
+                    return true;
+            }
+            return false;
+        });
 
         addSystemMessage("Initializing Sniper Mode...");
         addSystemMessage("Target: " + targetName);
@@ -136,6 +163,91 @@ public class PrivateChatActivity extends AppCompatActivity {
         addMessage("SYS: " + text);
     }
 
+    // --- PTT LOGIC ---
+
+    private void startRecording() {
+        addSystemMessage("Recording...");
+        recorder = new MediaRecorder();
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        recorder.setOutputFile(audioFileName);
+
+        try {
+            recorder.prepare();
+            recorder.start();
+            btnMic.setColorFilter(Color.RED); // Visual cue
+        } catch (Exception e) {
+            addSystemMessage("Rec Start Fail: " + e.getMessage());
+        }
+    }
+
+    private void stopRecording() {
+        try {
+            if (recorder != null) {
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+                btnMic.setColorFilter(Color.WHITE); // Reset cue
+                addSystemMessage("Sending Audio...");
+                processAudioFile();
+            }
+        } catch (Exception e) {
+            addSystemMessage("Rec Stop Fail: " + e.getMessage());
+        }
+    }
+
+    private void processAudioFile() {
+        if (targetEndpointId == null) {
+            addSystemMessage("No Target Connected.");
+            return;
+        }
+
+        try {
+            File file = new File(audioFileName);
+            FileInputStream fis = new FileInputStream(file);
+            byte[] fileBytes = new byte[(int) file.length()];
+            fis.read(fileBytes);
+            fis.close();
+
+            // HEADER STRATEGY: "VOICE:" + Bytes
+            String header = "VOICE:";
+            byte[] headerBytes = header.getBytes(StandardCharsets.UTF_8);
+            byte[] payloadBytes = new byte[headerBytes.length + fileBytes.length];
+
+            System.arraycopy(headerBytes, 0, payloadBytes, 0, headerBytes.length);
+            System.arraycopy(fileBytes, 0, payloadBytes, headerBytes.length, fileBytes.length);
+
+            Payload payload = Payload.fromBytes(payloadBytes);
+            connectionsClient.sendPayload(targetEndpointId, payload);
+            addMessage("SYS: [AUDIO SENT]");
+
+            // SAVE LOCAL COPY & UPDATE UI
+            String savedPath = saveToSessionFile(fileBytes);
+            addMessage("AUDIO:ME:" + savedPath);
+
+        } catch (Exception e) {
+            addSystemMessage("Audio Process Fail: " + e.getMessage());
+        }
+    }
+
+    private String saveToSessionFile(byte[] audioData) {
+        try {
+            // Unique Filename
+            String filename = "audio_" + System.currentTimeMillis() + ".3gp";
+            File dir = getExternalCacheDir();
+            File dest = new File(dir, filename);
+
+            FileOutputStream fos = new FileOutputStream(dest);
+            fos.write(audioData);
+            fos.close();
+
+            return dest.getAbsolutePath();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // --- CALLBACKS ---
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback = new EndpointDiscoveryCallback() {
@@ -171,12 +283,6 @@ public class PrivateChatActivity extends AppCompatActivity {
                 if (targetName.equals(info.getEndpointName())) { // paranoia check
                     connectionsClient.acceptConnection(endpointId, payloadCallback);
                 } else {
-                    // For Private Chat, we typically REJECT anyone else
-                    // But to avoid blocking accidental connections, we might accept.
-                    // The user said: "NO: Do nothing (Ignore other peers)" in Discovery.
-                    // But in Initiated, if someone ELSE calls us, we should probably ignore/reject?
-                    // Let's accept for robustness but we won't show their messages if we filter?
-                    // No, let's accept.
                     connectionsClient.acceptConnection(endpointId, payloadCallback);
                 }
             }
@@ -202,9 +308,32 @@ public class PrivateChatActivity extends AppCompatActivity {
         @Override
         public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
             if (payload.getType() == Payload.Type.BYTES) {
-                String msg = new String(payload.asBytes(), StandardCharsets.UTF_8);
-                String displayName = targetName.split("#")[0];
-                addMessage(displayName + ": " + msg);
+                byte[] receivedBytes = payload.asBytes();
+                String checkHeader = new String(receivedBytes, StandardCharsets.UTF_8);
+
+                if (checkHeader.startsWith("VOICE:")) {
+                    // IT IS AUDIO
+                    try {
+                        // Strip Header
+                        int headerLen = "VOICE:".length();
+                        int audioLen = receivedBytes.length - headerLen;
+                        byte[] audioBytes = new byte[audioLen];
+                        System.arraycopy(receivedBytes, headerLen, audioBytes, 0, audioLen);
+
+                        // Save Locally
+                        String filePath = saveToSessionFile(audioBytes);
+                        addMessage("AUDIO:THEM:" + filePath);
+
+                    } catch (Exception e) {
+                        addSystemMessage("Audio Save Fail: " + e.getMessage());
+                    }
+
+                } else {
+                    // IT IS TEXT
+                    String msg = new String(receivedBytes, StandardCharsets.UTF_8);
+                    String displayName = targetName.split("#")[0];
+                    addMessage(displayName + ": " + msg);
+                }
             }
         }
 
@@ -234,8 +363,38 @@ public class PrivateChatActivity extends AppCompatActivity {
             String msg = msgs.get(position);
             holder.text.setText(msg);
             holder.text.setTextColor(Color.WHITE);
+            holder.itemView.setOnClickListener(null); // Reset Listener
 
-            if (msg.startsWith("ME:")) {
+            if (msg.startsWith("AUDIO:")) {
+                // FORMAT: AUDIO:SENDER:FILEPATH
+                String[] parts = msg.split(":", 3);
+                if (parts.length == 3) {
+                    String sender = parts[1]; // ME or THEM
+                    String path = parts[2];
+
+                    holder.text.setText("▶ 🎤 Voice Note (Tap to Play)");
+                    if (sender.equals("ME")) {
+                        holder.text.setTextColor(Color.GREEN);
+                        holder.text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                    } else {
+                        holder.text.setTextColor(Color.CYAN);
+                        holder.text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                    }
+
+                    // CLICK TO PLAY
+                    holder.itemView.setOnClickListener(v -> {
+                        try {
+                            MediaPlayer mp = new MediaPlayer();
+                            mp.setDataSource(path);
+                            mp.prepare();
+                            mp.start();
+                            Toast.makeText(v.getContext(), "Playing...", Toast.LENGTH_SHORT).show();
+                        } catch (Exception e) {
+                            Toast.makeText(v.getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } else if (msg.startsWith("ME:")) {
                 holder.text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
                 holder.text.setTextColor(Color.GREEN);
             } else if (msg.startsWith("SYS:")) {

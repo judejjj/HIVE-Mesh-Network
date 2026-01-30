@@ -1,6 +1,5 @@
 package com.example.hive; // CHANGE THIS to your actual package name
 
-
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.WindowManager;
@@ -17,12 +16,25 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLogin;
 
     // SECURITY 1: Strict Input Patterns (Sanitization)
-    // Only allow alphanumeric characters for ID. No special symbols that could trigger SQL injection later.
+    // Only allow alphanumeric characters for ID. No special symbols that could
+    // trigger SQL injection later.
     private static final Pattern AGENT_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]*$");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // AUTO-LOGIN CHECK: Persistent Session
+        android.content.SharedPreferences prefs = getSharedPreferences("HivePrefs", MODE_PRIVATE);
+        String savedNick = prefs.getString("KEY_NICKNAME", "");
+        String savedUuid = prefs.getString("KEY_MY_UUID", "");
+
+        if (!savedNick.isEmpty() && !savedUuid.isEmpty()) {
+            android.content.Intent intent = new android.content.Intent(this, DashboardActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
 
         // SECURITY 2: Prevent Screenshots & Recent Apps Preview
         // This ensures the screen goes BLACK if someone tries to screenshot it,
@@ -89,7 +101,8 @@ public class MainActivity extends AppCompatActivity {
         android.content.Intent intent = new android.content.Intent(this, DashboardActivity.class);
 
         // Add flags to prevent going BACK to login screen with the back button
-        intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.setFlags(
+                android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);
     }

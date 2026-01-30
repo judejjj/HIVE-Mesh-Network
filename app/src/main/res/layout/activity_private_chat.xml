@@ -57,6 +57,15 @@
             android:paddingEnd="12dp"/>
 
         <ImageButton
+            android:id="@+id/btnMic"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/hive_accent"/>
+
+        <ImageButton
             android:id="@+id/btnSendPrivate"
             android:layout_width="48dp"
             android:layout_height="48dp"
