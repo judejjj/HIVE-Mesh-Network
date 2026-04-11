@@ -2,6 +2,7 @@ package com.example.hive;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -51,6 +52,10 @@ public class BroadcastActivity extends AppCompatActivity {
     // TASK 1: MAP IDs TO NICKNAMES
     private final Map<String, String> nicknameMap = new HashMap<>();
 
+    // SOS STATE
+    private boolean isActiveSOS = false;
+    private String currentSosPayload = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +87,33 @@ public class BroadcastActivity extends AppCompatActivity {
         btnSend.setOnClickListener(v -> sendManualMessage());
 
         appendLog("Initializing Radio as: " + myNickname);
+
+        // CHECK INTENT FOR SOS
+        checkSosIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        checkSosIntent(intent);
+    }
+
+    private void checkSosIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("SOS_MSG")) {
+            String msg = intent.getStringExtra("SOS_MSG");
+            if (msg != null && !msg.isEmpty()) {
+                isActiveSOS = true;
+                currentSosPayload = msg;
+                appendLog(msg, true); // True for SOS UI
+                
+                // Immediately send to all currently connected peers
+                if (!connectedEndpoints.isEmpty()) {
+                    Payload payload = Payload.fromBytes(msg.getBytes(StandardCharsets.UTF_8));
+                    connectionsClient.sendPayload(connectedEndpoints, payload);
+                }
+            }
+        }
     }
 
     @Override
@@ -180,6 +212,14 @@ public class BroadcastActivity extends AppCompatActivity {
                 MeshStateManager.connectedPeers.add(new MeshStateManager.Peer(endpointId, name));
 
                 appendLog(">>> CONNECTED: " + name);
+
+                // LATE JOINER SOS SYNC
+                if (isActiveSOS && !currentSosPayload.isEmpty()) {
+                    Payload payload = Payload.fromBytes(currentSosPayload.getBytes(StandardCharsets.UTF_8));
+                    List<String> targetList = new ArrayList<>();
+                    targetList.add(endpointId);
+                    connectionsClient.sendPayload(targetList, payload);
+                }
             } else {
                 appendLog("Connection Failed");
                 nicknameMap.remove(endpointId);
@@ -207,14 +247,26 @@ public class BroadcastActivity extends AppCompatActivity {
         public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
             if (payload.getType() == Payload.Type.BYTES) {
                 String msg = new String(payload.asBytes(), StandardCharsets.UTF_8);
-                String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
 
-                // LOOK UP NAME
-                String name = nicknameMap.get(endpointId);
-                if (name == null)
-                    name = endpointId.substring(0, 4); // Fallback
+                if (msg.startsWith("SOS:")) {
+                    // LATE JOINER SOS CAPTURE & DEMULTIPLEX
+                    SharedPreferences prefs = getSharedPreferences("HiveAlerts", Context.MODE_PRIVATE);
+                    String currentList = prefs.getString("SOS_LIST", "");
+                    if (!currentList.contains(msg)) {
+                        String newList = msg + "|||" + currentList;
+                        prefs.edit().putString("SOS_LIST", newList).apply();
+                    }
+                    appendLog(msg, true);
+                } else {
+                    String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
 
-                appendLog("[" + time + "] " + name + ": " + msg);
+                    // LOOK UP NAME
+                    String name = nicknameMap.get(endpointId);
+                    if (name == null)
+                        name = endpointId.substring(0, 4); // Fallback
+
+                    appendLog("[" + time + "] " + name + ": " + msg);
+                }
             }
         }
 
@@ -223,10 +275,28 @@ public class BroadcastActivity extends AppCompatActivity {
         }
     };
 
-    private void appendLog(String text) {
+    private void appendLog(String text, boolean isSos) {
         runOnUiThread(() -> {
-            tvLog.append(text + "\n"); // Append newline at end
+            if (isSos) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    tvLog.append(android.text.Html.fromHtml("<font color='#FF4444'><b>🚨 EMERGENCY BROADCAST:</b><br/>" + text + "</font><br><br>", android.text.Html.FROM_HTML_MODE_LEGACY));
+                } else {
+                    tvLog.append(android.text.Html.fromHtml("<font color='#FF4444'><b>🚨 EMERGENCY BROADCAST:</b><br/>" + text + "</font><br><br>"));
+                }
+            } else if (text.contains("🛡️_GOV_HQ_") || text.contains("Initializing Radio as: 🛡️_GOV_HQ_")) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    tvLog.append(android.text.Html.fromHtml("<font color='#FFD700'>" + text + "</font><br>", android.text.Html.FROM_HTML_MODE_LEGACY));
+                } else {
+                    tvLog.append(android.text.Html.fromHtml("<font color='#FFD700'>" + text + "</font><br>"));
+                }
+            } else {
+                tvLog.append(text + "\n");
+            }
             scrollLog.post(() -> scrollLog.fullScroll(View.FOCUS_DOWN));
         });
+    }
+
+    private void appendLog(String text) {
+        appendLog(text, false);
     }
 }

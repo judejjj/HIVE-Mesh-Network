@@ -50,4 +50,5 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("com.google.android.gms:play-services-nearby:19.0.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 }

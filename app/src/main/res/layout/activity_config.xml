@@ -65,4 +65,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <Button
+        android:id="@+id/btnGovAccess"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Admin / Official Access"
+        android:backgroundTint="#333333"
+        android:textColor="#FFD700"
+        android:layout_marginTop="32dp"/>
+
 </LinearLayout>

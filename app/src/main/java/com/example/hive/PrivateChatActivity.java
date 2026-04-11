@@ -77,12 +77,12 @@ public class PrivateChatActivity extends AppCompatActivity {
 
         tvTargetName.setText("SNIPING: " + targetName);
 
-        rvChat.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ChatAdapter(messages);
-        rvChat.setAdapter(adapter);
-
         // Load Identity via Helper
         myNickname = MeshHelper.getBroadcastName(this);
+
+        rvChat.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new ChatAdapter(messages, myNickname);
+        rvChat.setAdapter(adapter);
 
         connectionsClient = Nearby.getConnectionsClient(this);
 
@@ -328,6 +328,21 @@ public class PrivateChatActivity extends AppCompatActivity {
                         addSystemMessage("Audio Save Fail: " + e.getMessage());
                     }
 
+                } else if (checkHeader.startsWith("ALERT:")) {
+                    // IT IS AN OFFICIAL GOVERNMENT ALERT
+                    String alertData = checkHeader.substring(6); // Strips "ALERT:"
+                    
+                    // 1. Send it to the local database/SharedPreferences for the Map to plot a Blue/Gold pin
+                    android.content.SharedPreferences prefs = getSharedPreferences("HiveAlerts", Context.MODE_PRIVATE);
+                    String currentList = prefs.getString("SOS_LIST", "");
+                    if (!currentList.contains("ALERT:" + alertData)) {
+                        String newList = "ALERT:" + alertData + "|||" + currentList;
+                        prefs.edit().putString("SOS_LIST", newList).apply();
+                    }
+                    
+                    // 2. Route it to the chat UI with the special system tag
+                    addMessage("SYS_ALERT:" + alertData);
+                    
                 } else {
                     // IT IS TEXT
                     String msg = new String(receivedBytes, StandardCharsets.UTF_8);
@@ -345,9 +360,11 @@ public class PrivateChatActivity extends AppCompatActivity {
     // --- ADAPTER ---
     static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
         private final List<String> msgs;
+        private final String myNickname;
 
-        ChatAdapter(List<String> msgs) {
+        ChatAdapter(List<String> msgs, String myNickname) {
             this.msgs = msgs;
+            this.myNickname = myNickname;
         }
 
         @NonNull
@@ -364,8 +381,18 @@ public class PrivateChatActivity extends AppCompatActivity {
             holder.text.setText(msg);
             holder.text.setTextColor(Color.WHITE);
             holder.itemView.setOnClickListener(null); // Reset Listener
+            holder.text.setBackgroundColor(Color.TRANSPARENT); // Reset background
 
-            if (msg.startsWith("AUDIO:")) {
+            if (msg.startsWith("SYS_ALERT:")) {
+                holder.text.setText("🛡️ [OFFICIAL GOV ALERT]\n" + msg.substring(10)); 
+                holder.text.setTextColor(Color.BLACK);
+                holder.text.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                holder.text.setBackgroundColor(Color.parseColor("#FFD700")); // Solid Gold Background
+            } else if (msg.contains("🛡️_GOV_HQ_")) {
+                holder.text.setText(msg);
+                holder.text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                holder.text.setTextColor(Color.parseColor("#FFD700")); // Gold Text
+            } else if (msg.startsWith("AUDIO:")) {
                 // FORMAT: AUDIO:SENDER:FILEPATH
                 String[] parts = msg.split(":", 3);
                 if (parts.length == 3) {
@@ -396,7 +423,11 @@ public class PrivateChatActivity extends AppCompatActivity {
                 }
             } else if (msg.startsWith("ME:")) {
                 holder.text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
-                holder.text.setTextColor(Color.GREEN);
+                if (myNickname != null && myNickname.contains("🛡️_GOV_HQ_")) {
+                    holder.text.setTextColor(Color.parseColor("#FFD700")); // Gold
+                } else {
+                    holder.text.setTextColor(Color.GREEN);
+                }
             } else if (msg.startsWith("SYS:")) {
                 holder.text.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                 holder.text.setTextColor(Color.GRAY);

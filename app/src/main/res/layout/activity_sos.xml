@@ -5,9 +5,8 @@
     android:layout_height="match_parent"
     android:background="@color/hive_dark">
 
-    <fragment
-        android:id="@+id/mapFragment"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <org.osmdroid.views.MapView
+        android:id="@+id/offlineMap"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/detailsContainer"
@@ -34,7 +33,7 @@
         android:orientation="vertical"
         android:padding="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mapFragment"
+        app:layout_constraintTop_toBottomOf="@id/offlineMap"
         app:layout_constraintVertical_weight="1">
 
         <TextView

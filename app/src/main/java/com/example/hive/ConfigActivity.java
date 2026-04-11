@@ -70,5 +70,10 @@ public class ConfigActivity extends AppCompatActivity {
             Toast.makeText(this, "PURGED", Toast.LENGTH_SHORT).show();
             finish();
         });
+
+        Button btnGovAccess = findViewById(R.id.btnGovAccess);
+        btnGovAccess.setOnClickListener(v -> {
+            startActivity(new android.content.Intent(this, MainActivity.class)); 
+        });
     }
 }

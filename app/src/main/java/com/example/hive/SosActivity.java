@@ -11,24 +11,30 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapEventsReceiver;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.MapEventsOverlay;
+import org.osmdroid.views.overlay.Marker;
+import android.preference.PreferenceManager;
+import android.content.Context;
 
-public class SosActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class SosActivity extends AppCompatActivity {
 
-    private GoogleMap mMap;
+    private MapView mMap;
     private EditText etDetails;
     private TextView tvCoordinates;
     private Button btnBroadcast, btnAutoDetect;
-    private LatLng selectedLocation = new LatLng(28.6139, 77.2090); // Default
+    private GeoPoint selectedLocation = new GeoPoint(28.6139, 77.2090); // Default
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        Context ctx = getApplicationContext();
+        Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
+        
         if (getSupportActionBar() != null) getSupportActionBar().hide();
         setContentView(R.layout.activity_sos);
 
@@ -37,57 +43,66 @@ public class SosActivity extends AppCompatActivity implements OnMapReadyCallback
         btnBroadcast = findViewById(R.id.btnBroadcastSos);
         btnAutoDetect = findViewById(R.id.btnAutoDetect);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.mapFragment);
-        if (mapFragment != null) mapFragment.getMapAsync(this);
+        mMap = findViewById(R.id.offlineMap);
+        mMap.setMultiTouchControls(true);
+        mMap.getController().setZoom(16.0);
+        mMap.getController().setCenter(selectedLocation);
+        updateCoordText(selectedLocation);
+
+        MapEventsReceiver mReceive = new MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                placeMarker(p);
+                return true;
+            }
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                return false;
+            }
+        };
+        mMap.getOverlays().add(new MapEventsOverlay(mReceive));
 
         btnBroadcast.setOnClickListener(v -> sendSos());
 
         // AUTO DETECT: Just centers map on a "Simulated" GPS location for now
-        // (Or real one if blue dot is available)
         btnAutoDetect.setOnClickListener(v -> {
             if (mMap != null) {
                 // Simulate getting current GPS
-                LatLng myPos = new LatLng(28.6139, 77.2090); // Replace with real GPS logic if needed
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myPos, 16));
+                GeoPoint myPos = new GeoPoint(28.6139, 77.2090); // Replace with real GPS logic if needed
+                mMap.getController().animateTo(myPos);
                 placeMarker(myPos);
                 Toast.makeText(this, "Location Acquired", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-        updateCoordText(selectedLocation);
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mMap.setMyLocationEnabled(true);
-        }
-
-        mMap.setOnMapClickListener(this::placeMarker);
+    private void placeMarker(GeoPoint geoPoint) {
+        mMap.getOverlays().removeIf(overlay -> overlay instanceof Marker); // Clear existing markers
+        Marker marker = new Marker(mMap);
+        marker.setPosition(geoPoint);
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        marker.setTitle("Emergency Location");
+        mMap.getOverlays().add(marker);
+        mMap.invalidate();
+        
+        selectedLocation = geoPoint;
+        updateCoordText(geoPoint);
     }
 
-    private void placeMarker(LatLng latLng) {
-        mMap.clear();
-        mMap.addMarker(new MarkerOptions().position(latLng).title("Emergency Location"));
-        selectedLocation = latLng;
-        updateCoordText(latLng);
-    }
-
-    private void updateCoordText(LatLng loc) {
-        tvCoordinates.setText(String.format("LOC: %.4f, %.4f", loc.latitude, loc.longitude));
+    private void updateCoordText(GeoPoint loc) {
+        tvCoordinates.setText(String.format("LOC: %.4f, %.4f", loc.getLatitude(), loc.getLongitude()));
     }
 
     private void sendSos() {
         String details = etDetails.getText().toString().trim();
         if (details.isEmpty()) { etDetails.setError("Required"); return; }
 
-        String locStr = String.format("%.4f, %.4f", selectedLocation.latitude, selectedLocation.longitude);
+        String locStr = String.format("%.4f, %.4f", selectedLocation.getLatitude(), selectedLocation.getLongitude());
         String msg = "SOS: " + details + " [AT: " + locStr + "]";
 
         Intent intent = new Intent(SosActivity.this, BroadcastActivity.class);
         intent.putExtra("SOS_MSG", msg);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();
     }

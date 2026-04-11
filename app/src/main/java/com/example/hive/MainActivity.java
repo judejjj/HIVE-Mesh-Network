@@ -81,8 +81,15 @@ public class MainActivity extends AppCompatActivity {
         boolean isUser2 = user.equals("hive2") && pass.equals("hive2");
         boolean isUser3 = user.equals("hive3") && pass.equals("hive3");
 
+        // THE NEW OFFICIAL ACCOUNT
+        boolean isGovOfficial = user.equals("gov") && pass.equals("gov");
+
         // CHECK: Is it User 1 OR (||) User 2?
-        if (isUser1 || isUser2 || isUser3) {
+        if (isUser1 || isUser2 || isUser3 || isGovOfficial) {
+            // Save their official status before moving to the Dashboard
+            android.content.SharedPreferences prefs = getSharedPreferences("HivePrefs", MODE_PRIVATE);
+            prefs.edit().putBoolean("IS_GOV_OFFICIAL", isGovOfficial).apply();
+            
             // SUCCESS
             performSystemCheck(user, pass);
         } else {

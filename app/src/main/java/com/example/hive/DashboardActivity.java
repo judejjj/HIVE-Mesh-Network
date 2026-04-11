@@ -128,19 +128,25 @@ public class DashboardActivity extends AppCompatActivity {
     private void checkAndGenerateIdentity() {
         SharedPreferences prefs = getSharedPreferences("HivePrefs", Context.MODE_PRIVATE);
         String myUuid = prefs.getString("KEY_MY_UUID", null);
-        String myNickname = prefs.getString("KEY_NICKNAME", null);
+        boolean isGov = prefs.getBoolean("IS_GOV_OFFICIAL", false);
 
         if (myUuid == null) {
             myUuid = UUID.randomUUID().toString();
             prefs.edit().putString("KEY_MY_UUID", myUuid).apply();
         }
 
-        if (myNickname == null) {
-            String shortId = myUuid.substring(0, 4).toUpperCase();
+        String shortId = myUuid.substring(0, 4).toUpperCase();
+        String myNickname;
+        
+        // If they are gov, they get the special tag. If not, they are a Survivor.
+        if (isGov) {
+            myNickname = "🛡️_GOV_HQ_" + shortId;
+        } else {
             myNickname = "Survivor_" + shortId;
-            prefs.edit().putString("KEY_NICKNAME", myNickname).apply();
-            prefs.edit().putString("username", myNickname).apply();
         }
+        
+        prefs.edit().putString("KEY_NICKNAME", myNickname).apply();
+        prefs.edit().putString("username", myNickname).apply();
     }
 
     private void setupHeaderSettings() {
