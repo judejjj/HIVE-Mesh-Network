@@ -40,7 +40,7 @@ public class BroadcastActivity extends AppCompatActivity {
     private static final Strategy STRATEGY = Strategy.P2P_CLUSTER;
 
     private EditText etMessage;
-    private Button btnSend;
+    private View btnSend;
     private TextView tvLog;
     private ScrollView scrollLog;
 
